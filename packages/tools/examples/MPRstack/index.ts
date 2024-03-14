@@ -30,6 +30,7 @@ const {
   ToolGroupManager,
   StackScrollMouseWheelTool,
   Enums: csToolsEnums,
+  utilities,
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
@@ -49,6 +50,7 @@ const ORIENTATION_OPTIONS = {
   SAGITTAL: 'sagittal',
   CORONAL: 'coronal',
 };
+const DEFAULT_ORIENTATION = ORIENTATION_OPTIONS.CORONAL;
 const COLOR_GREEN = <Types.Point3>[0, 0.4, 0];
 const COLOR_PURPLE = <Types.Point3>[0.4, 0, 0.4];
 const SIZE = '500px';
@@ -136,7 +138,7 @@ async function changeToStack(viewport) {
 
 addButtonToToolbar({
   id: LOAD_BUTTON_ID,
-  title: 'Data Load from DicomWeb',
+  title: 'Load data from DicomWeb',
   onClick: loadFromDicomWeb,
 });
 
@@ -153,6 +155,10 @@ async function toggleMode() {
 
   if (viewport.type === ViewportType.STACK) {
     await changeToVolume(viewport);
+
+    // To apply the orientation, it needs to call the setOrientation, after a while.
+    // Otherwise, this request will be ignored.
+    setTimeout(() => setOrientation(DEFAULT_ORIENTATION));
   } else {
     await changeToStack(viewport);
   }
@@ -237,6 +243,9 @@ async function _startFromStack(
 
   await viewport.setStack(stack, 0);
 
+  // Without this code, paging becomes jerky.
+  utilities.stackContextPrefetch.enable(viewport.element);
+
   renderingEngine.render();
 }
 
@@ -250,44 +259,46 @@ function addOrientationDropdownIfVolumeViewport() {
     addDropdownToToolbar({
       id,
       options: {
-        values: ['axial', 'sagittal', 'coronal'],
-        defaultValue: 'axial',
+        values: [
+          ORIENTATION_OPTIONS.AXIAL,
+          ORIENTATION_OPTIONS.SAGITTAL,
+          ORIENTATION_OPTIONS.CORONAL,
+        ],
+        defaultValue: DEFAULT_ORIENTATION,
       },
-      onSelectedValueChange: (selectedValue) => {
-        // Get the rendering engine
-        const renderingEngine = getRenderingEngine(RENDERING_ENGINE_ID);
-
-        // Get the volume viewport
-        const viewport = <Types.IVolumeViewport>(
-          renderingEngine.getViewport(VIEWPORT_ID)
-        );
-
-        switch (selectedValue) {
-          case ORIENTATION_OPTIONS.AXIAL:
-            viewport.setOrientation(Enums.OrientationAxis.AXIAL);
-
-            break;
-          case ORIENTATION_OPTIONS.SAGITTAL:
-            viewport.setOrientation(Enums.OrientationAxis.SAGITTAL);
-
-            break;
-          case ORIENTATION_OPTIONS.CORONAL:
-            viewport.setOrientation(Enums.OrientationAxis.CORONAL);
-            break;
-          default:
-            throw new Error('undefined orientation option');
-        }
-
-        // TODO -> Maybe we should have a helper for this on the viewport
-        // Set the new orientation
-        // Reset the camera after the normal changes
-        viewport.render();
-      },
+      onSelectedValueChange: setOrientation,
     });
   } else {
     // remove old orientationDropdown
     document.getElementById(id)?.remove();
   }
+}
+
+function setOrientation(orientation) {
+  // Get the rendering engine
+  const renderingEngine = getRenderingEngine(RENDERING_ENGINE_ID);
+  // Get the volume viewport
+  const viewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(VIEWPORT_ID)
+  );
+
+  switch (orientation) {
+    case ORIENTATION_OPTIONS.AXIAL:
+      viewport.setOrientation(Enums.OrientationAxis.AXIAL);
+      break;
+    case ORIENTATION_OPTIONS.SAGITTAL:
+      viewport.setOrientation(Enums.OrientationAxis.SAGITTAL);
+      break;
+    case ORIENTATION_OPTIONS.CORONAL:
+      viewport.setOrientation(Enums.OrientationAxis.CORONAL);
+      break;
+    default:
+      throw new Error('undefined orientation option');
+  }
+  // TODO -> Maybe we should have a helper for this on the viewport
+  // Set the new orientation
+  // Reset the camera after the normal changes
+  viewport.render();
 }
 
 /**
