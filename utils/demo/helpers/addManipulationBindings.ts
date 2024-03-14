@@ -34,7 +34,7 @@ export default function addManipulationBindings(
 ) {
   const zoomBindings: Types.IToolBinding[] = [
     {
-      mouseButton: MouseBindings.Secondary,
+      mouseButton: MouseBindings.Auxiliary,
     },
   ];
 
@@ -71,7 +71,7 @@ export default function addManipulationBindings(
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Auxiliary,
+        mouseButton: MouseBindings.Secondary,
       },
       {
         numTouchPoints: 1,
@@ -98,18 +98,18 @@ export default function addManipulationBindings(
   // Add a length tool binding to allow testing annotations on examples targetting
   // other use cases.  Use a primary button with shift+ctrl as that is relatively
   // unlikely to be otherwise used.
-   toolGroup.setToolActive(LengthTool.toolName, {
-     bindings: [
-       {
-         mouseButton: MouseBindings.Primary,
-         modifierKey: KeyboardBindings.ShiftCtrl,
-       },
-       {
-         numTouchPoints: 1,
-         modifierKey: KeyboardBindings.ShiftCtrl,
-       },
-     ],
-   });
+  toolGroup.setToolActive(LengthTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.ShiftCtrl,
+      },
+      {
+        numTouchPoints: 1,
+        modifierKey: KeyboardBindings.ShiftCtrl,
+      },
+    ],
+  });
 
   if (is3DViewport) {
     toolGroup.setToolActive(TrackballRotateTool.toolName, {
